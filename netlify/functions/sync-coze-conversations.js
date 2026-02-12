@@ -18,6 +18,8 @@ const BOT_IDS = (process.env.COZE_SYNC_BOT_IDS || '')
 const MAX_CONVERSATION_PAGES = Number(process.env.COZE_SYNC_MAX_PAGES || 2);
 const CONVERSATION_PAGE_SIZE = Number(process.env.COZE_SYNC_PAGE_SIZE || 50);
 const MESSAGE_PAGE_LIMIT = Number(process.env.COZE_SYNC_MESSAGE_LIMIT || 100);
+const COZE_RETRY_TIMES = Number(process.env.COZE_SYNC_RETRY_TIMES || 3);
+const COZE_RETRY_BASE_MS = Number(process.env.COZE_SYNC_RETRY_BASE_MS || 800);
 
 const queryTable = schema =>
   schema === 'public' ? supabase.from(TABLE_NAME) : supabase.schema(schema).from(TABLE_NAME);
@@ -33,6 +35,34 @@ function getCozeClient() {
     token: process.env.COZE_API_KEY,
     baseURL: COZE_API_BASE,
   });
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function withRetry(taskName, fn) {
+  let lastError;
+  for (let attempt = 1; attempt <= COZE_RETRY_TIMES; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const msg = String(err?.message || err || '');
+      // 对扣子 5xx/服务抖动做重试，其他错误快速失败
+      const shouldRetry =
+        /code:\s*5000/i.test(msg) ||
+        /server issues/i.test(msg) ||
+        /ECONNRESET|ETIMEDOUT|fetch failed|network/i.test(msg);
+
+      if (!shouldRetry || attempt >= COZE_RETRY_TIMES) break;
+
+      const backoff = COZE_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+      console.warn(`[${taskName}] attempt ${attempt} failed, retry in ${backoff}ms:`, msg);
+      await sleep(backoff);
+    }
+  }
+  throw lastError;
 }
 
 async function getBotCursor(botId) {
@@ -72,11 +102,13 @@ async function listAllMessages(client, conversationId) {
 
   while (hasMore && loopGuard < 20) {
     loopGuard += 1;
-    const page = await client.conversations.messages.list(conversationId, {
-      order: 'asc',
-      limit: MESSAGE_PAGE_LIMIT,
-      ...(afterId ? { after_id: afterId } : {}),
-    });
+    const page = await withRetry(`messages.list:${conversationId}`, () =>
+      client.conversations.messages.list(conversationId, {
+        order: 'asc',
+        limit: MESSAGE_PAGE_LIMIT,
+        ...(afterId ? { after_id: afterId } : {}),
+      })
+    );
 
     const list = Array.isArray(page?.data) ? page.data : [];
     out.push(...list);
@@ -130,22 +162,30 @@ async function syncOneBot(client, botId) {
   const lastCursor = await getBotCursor(botId);
   let maxSeen = lastCursor;
   const rowsToInsert = [];
+  let scannedConversations = 0;
+  let scannedMessages = 0;
+  let scannedNewMessages = 0;
 
   for (let page = 1; page <= MAX_CONVERSATION_PAGES; page += 1) {
-    const convResp = await client.conversations.list({
-      bot_id: botId,
-      page_num: page,
-      page_size: CONVERSATION_PAGE_SIZE,
-    });
+    const convResp = await withRetry(`conversations.list:${botId}:p${page}`, () =>
+      client.conversations.list({
+        bot_id: botId,
+        page_num: page,
+        page_size: CONVERSATION_PAGE_SIZE,
+      })
+    );
 
     const conversations = Array.isArray(convResp?.conversations) ? convResp.conversations : [];
+    scannedConversations += conversations.length;
 
     for (const conversation of conversations) {
       const conversationId = conversation?.id;
       if (!conversationId) continue;
 
       const messages = await listAllMessages(client, conversationId);
+      scannedMessages += messages.length;
       const newMessages = messages.filter(m => Number(m?.created_at || 0) > lastCursor);
+      scannedNewMessages += newMessages.length;
 
       for (const m of newMessages) {
         maxSeen = Math.max(maxSeen, Number(m?.created_at || 0));
@@ -164,7 +204,14 @@ async function syncOneBot(client, botId) {
   }
 
   await setBotCursor(botId, maxSeen);
-  return { inserted: rowsToInsert.length, lastCursor, maxSeen };
+  return {
+    inserted: rowsToInsert.length,
+    lastCursor,
+    maxSeen,
+    scannedConversations,
+    scannedMessages,
+    scannedNewMessages,
+  };
 }
 
 exports.config = {
@@ -186,15 +233,25 @@ exports.handler = async () => {
 
     const client = getCozeClient();
     const result = [];
+    let hasError = false;
 
     for (const botId of BOT_IDS) {
-      const r = await syncOneBot(client, botId);
-      result.push({ botId, ...r });
+      try {
+        const r = await syncOneBot(client, botId);
+        result.push({ botId, ok: true, ...r });
+      } catch (err) {
+        hasError = true;
+        result.push({
+          botId,
+          ok: false,
+          error: err?.message || String(err),
+        });
+      }
     }
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ ok: true, result }),
+      statusCode: hasError ? 207 : 200,
+      body: JSON.stringify({ ok: !hasError, result }),
     };
   } catch (error) {
     console.error('sync-coze-conversations failed:', error);
