@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Message, Tool } from '../types';
 import { startChatSession, sendMessageStream } from '../services/geminiService';
 import { sendCozeMessageStream } from '../services/cozeService';
+import { saveConversation } from '../services/saveConversation';
 
 interface ChatModalProps {
     isOpen: boolean;
@@ -82,6 +83,18 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, activeTool, user
                 setMessages(prev => prev.map(msg => 
                     msg.id === botMsgId ? { ...msg, text: fullText } : msg
                 ));
+            }
+
+            // 将本轮对话写入 Supabase（扣子后台已有记录，此处做本站备份）
+            if (user && fullText) {
+                const studentId = user.user_metadata?.student_id || user.id;
+                const agentId = activeTool?.id || activeTool?.cozeBotId || 'general';
+                saveConversation({
+                    student_id: String(studentId),
+                    agent_id: agentId,
+                    user_input: userMsg.text,
+                    bot_reply: fullText,
+                }).catch((err) => console.warn('保存对话到 Supabase 失败:', err));
             }
         } catch (e) {
             console.error(e);

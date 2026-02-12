@@ -18,6 +18,8 @@ export const CATEGORIES = [
     '互动游戏'
 ];
 
+// 扣子智能体：在需要「站内对话」的工具里加上 cozeBotId，值为扣子平台的 Bot ID（一串数字）
+// 例如：cozeBotId: '7498549748861763619'
 export const TOOLS: Tool[] = [
     {
         id: 'word-chain-game',
@@ -52,6 +54,7 @@ export const TOOLS: Tool[] = [
         reviewCount: 124,
         tags: ['听写训练', '故事生成'],
         systemInstruction: "You are an English teacher hosting a daily podcast...",
+        // cozeBotId: '你的扣子Bot ID',  // 填写后点击「开始」会在站内弹窗用扣子对话
     },
     {
         id: 'ielts-speaking',

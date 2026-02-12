@@ -12,7 +12,9 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.COZE_API_KEY': JSON.stringify(env.COZE_API_KEY),
+        'process.env.COZE_API_BASE': JSON.stringify(env.COZE_API_BASE || 'https://api.coze.com'),
       },
       resolve: {
         alias: {

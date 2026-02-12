@@ -1,7 +1,8 @@
-// Replace with your Coze PAT (Personal Access Token)
-// In production, use process.env.COZE_API_KEY
-const COZE_API_KEY = process.env.COZE_API_KEY || 'pat_sgpoEzbH6jfyDHpCwmu47P1v8O5npqLCwLUkIIbP9jxKULgtAyazmWzcat889bpb';
-const COZE_API_URL = 'https://api.coze.com/v3/chat';
+// 个人访问令牌（PAT）：在扣子开放平台「授权」→「个人访问令牌」中创建
+// 国内扣子 coze.cn 需在环境变量中设置 COZE_API_BASE=https://api.coze.cn
+const COZE_API_KEY = process.env.COZE_API_KEY || '';
+const COZE_API_BASE = process.env.COZE_API_BASE || 'https://api.coze.com';
+const COZE_API_URL = `${COZE_API_BASE.replace(/\/$/, '')}/v3/chat`;
 
 export const sendCozeMessageStream = async function* (
     botId: string, 
