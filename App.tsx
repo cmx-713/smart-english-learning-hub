@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import ToolCard from './components/ToolCard';
 import ChatModal from './components/ChatModal';
 import AuthModal from './components/AuthModal';
+import ContactModal from './components/ContactModal';
 import { supabase } from './services/supabaseClient';
 import { TOOLS, CATEGORIES } from './constants';
 import { Tool } from './types';
@@ -23,6 +24,7 @@ const App: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [isContactOpen, setIsContactOpen] = useState(false);
     const [activeTool, setActiveTool] = useState<Tool | null>(null);
     const [user, setUser] = useState<any>(null);
     const cozeChatClientRef = useRef<any>(null);
@@ -162,6 +164,7 @@ const App: React.FC = () => {
                 onOpenAuth={() => setIsAuthOpen(true)}
                 user={user}
                 onLogout={handleLogout}
+                onOpenContact={() => setIsContactOpen(true)}
             />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -254,6 +257,11 @@ const App: React.FC = () => {
                     setUser(u);
                     setIsAuthOpen(false);
                 }}
+            />
+
+            <ContactModal
+                isOpen={isContactOpen}
+                onClose={() => setIsContactOpen(false)}
             />
         </div>
     );
