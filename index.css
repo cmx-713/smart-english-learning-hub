@@ -1,0 +1,13 @@
+/* ─── Coze Chat SDK 样式覆盖 ─── */
+
+/* 让聊天窗口可以手动拖拽调整大小 */
+[class*="chatbot-container"],
+[id*="coze"] [class*="chat-box"],
+[id*="coze"] [class*="chatbot"] {
+    resize: both !important;
+    overflow: auto !important;
+    min-width: 400px !important;
+    min-height: 400px !important;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+}
