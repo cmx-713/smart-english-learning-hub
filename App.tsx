@@ -108,8 +108,12 @@ const App: React.FC = () => {
                     }
                 },
                 userInfo: {
-                    id: user.user_metadata?.student_id || user.email || 'anonymous',
-                    name: user.user_metadata?.name || user.user_metadata?.student_id || user.email || 'Student',
+                    // 使用 Supabase UUID 作为唯一标识，确保每个用户的会话完全隔离
+                    id: user.id || user.user_metadata?.student_id || 'anonymous',
+                    // 显示名使用"姓名(学号)"格式，方便在扣子后台辨认
+                    name: user.user_metadata?.full_name
+                        ? `${user.user_metadata.full_name}(${user.user_metadata.student_id || ''})`
+                        : (user.user_metadata?.student_id || 'Student'),
                 },
                 ui: {
                     chatBot: {
