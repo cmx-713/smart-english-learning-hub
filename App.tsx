@@ -70,7 +70,45 @@ const App: React.FC = () => {
         return tools;
     }, [selectedCategory, searchQuery]);
 
-    const handleStartTool = (tool: Tool) => {
+    // Token 缓存: 存储每个用户的 access_token，避免每次都请求
+    const cozeTokenCacheRef = useRef<{ token: string; expiresAt: number } | null>(null);
+
+    // 从后端获取基于 JWT 的用户专属 Token
+    const fetchCozeToken = async (userId: string): Promise<string> => {
+        // 如果缓存的 token 还没过期，直接使用
+        const cached = cozeTokenCacheRef.current;
+        if (cached && Date.now() < cached.expiresAt) {
+            return cached.token;
+        }
+
+        try {
+            const response = await fetch('/api/coze-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: userId }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('[App] Failed to fetch Coze token:', errorData);
+                throw new Error(errorData.error || 'Failed to fetch token');
+            }
+
+            const data = await response.json();
+            // 缓存 token，提前 5 分钟过期（防止边界情况）
+            cozeTokenCacheRef.current = {
+                token: data.access_token,
+                expiresAt: Date.now() + (data.expires_in - 300) * 1000,
+            };
+            return data.access_token;
+        } catch (err) {
+            console.error('[App] Token fetch error, falling back to PAT:', err);
+            // 降级使用 PAT（如果后端未配置 JWT 凭证）
+            return COZE_PAT;
+        }
+    };
+
+    const handleStartTool = async (tool: Tool) => {
         if (!user) {
             setIsAuthOpen(true);
             return;
@@ -90,6 +128,10 @@ const App: React.FC = () => {
                 cozeChatClientRef.current = null;
             }
 
+            // 获取该用户的专属 Token（JWT 签名 + session_name 隔离）
+            const userId = user.id || user.user_metadata?.student_id || 'anonymous';
+            const cozeToken = await fetchCozeToken(userId);
+
             const client = new window.CozeWebSDK.WebChatClient({
                 config: {
                     bot_id: tool.cozeBotId,
@@ -102,15 +144,15 @@ const App: React.FC = () => {
                 },
                 auth: {
                     type: 'token',
-                    token: COZE_PAT,
-                    onRefreshToken: function () {
-                        return COZE_PAT;
+                    token: cozeToken,
+                    onRefreshToken: async function () {
+                        // Token 过期时自动刷新
+                        cozeTokenCacheRef.current = null; // 清除缓存
+                        return await fetchCozeToken(userId);
                     }
                 },
                 userInfo: {
-                    // 使用 Supabase UUID 作为唯一标识，确保每个用户的会话完全隔离
-                    id: user.id || user.user_metadata?.student_id || 'anonymous',
-                    // 显示名使用"姓名(学号)"格式，方便在扣子后台辨认
+                    id: userId,
                     name: user.user_metadata?.full_name
                         ? `${user.user_metadata.full_name}(${user.user_metadata.student_id || ''})`
                         : (user.user_metadata?.student_id || 'Student'),
