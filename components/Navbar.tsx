@@ -5,9 +5,11 @@ interface NavbarProps {
     user: any | null;
     onLogout: () => void;
     onOpenContact: () => void;
+    onOpenAdmin: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ onOpenAuth, user, onLogout, onOpenContact }) => {
+const Navbar: React.FC<NavbarProps> = ({ onOpenAuth, user, onLogout, onOpenContact, onOpenAdmin }) => {
+    const isAdmin = user?.user_metadata?.role === 'admin';
     return (
         <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,6 +24,17 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenAuth, user, onLogout, onOpenConta
 
                     {/* Actions & Auth */}
                     <div className="flex items-center gap-4">
+                        {/* Admin Dashboard Button - only visible to admin */}
+                        {isAdmin && (
+                            <button
+                                onClick={onOpenAdmin}
+                                className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all mr-1"
+                            >
+                                <span className="material-icons-round text-[18px]">analytics</span>
+                                数据统计
+                            </button>
+                        )}
+
                         {/* Contact Button */}
                         <button
                             onClick={onOpenContact}

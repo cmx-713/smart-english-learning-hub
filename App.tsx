@@ -4,7 +4,9 @@ import ToolCard from './components/ToolCard';
 import ChatModal from './components/ChatModal';
 import AuthModal from './components/AuthModal';
 import ContactModal from './components/ContactModal';
+import AdminDashboard from './components/AdminDashboard';
 import { supabase } from './services/supabaseClient';
+import { trackPageView, trackAgentCall } from './services/trackingService';
 import { TOOLS, CATEGORIES } from './constants';
 import { Tool } from './types';
 
@@ -25,9 +27,11 @@ const App: React.FC = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isContactOpen, setIsContactOpen] = useState(false);
+    const [isAdminOpen, setIsAdminOpen] = useState(false);
     const [activeTool, setActiveTool] = useState<Tool | null>(null);
     const [user, setUser] = useState<any>(null);
     const cozeChatClientRef = useRef<any>(null);
+    const pageViewTrackedRef = useRef<string | null>(null); // track which userId already recorded
 
     // Check for existing session on load
     useEffect(() => {
@@ -49,6 +53,14 @@ const App: React.FC = () => {
             }
         };
     }, []);
+
+    // Track page view once per session when user is set
+    useEffect(() => {
+        if (user && pageViewTrackedRef.current !== user.id) {
+            pageViewTrackedRef.current = user.id;
+            trackPageView(user.id);
+        }
+    }, [user]);
 
     const filteredTools = useMemo(() => {
         let tools = TOOLS;
@@ -113,6 +125,9 @@ const App: React.FC = () => {
             setIsAuthOpen(true);
             return;
         }
+
+        // Track agent call
+        trackAgentCall(user.id, tool.id, tool.title);
 
         // If tool has an external link, open it in new tab
         if (tool.externalLink) {
@@ -211,6 +226,7 @@ const App: React.FC = () => {
                 user={user}
                 onLogout={handleLogout}
                 onOpenContact={() => setIsContactOpen(true)}
+                onOpenAdmin={() => setIsAdminOpen(true)}
             />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -308,6 +324,11 @@ const App: React.FC = () => {
             <ContactModal
                 isOpen={isContactOpen}
                 onClose={() => setIsContactOpen(false)}
+            />
+
+            <AdminDashboard
+                isOpen={isAdminOpen}
+                onClose={() => setIsAdminOpen(false)}
             />
         </div>
     );
