@@ -12,10 +12,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    // 登录模式：student = 学号登录，teacher = 邮箱登录
     const [loginMode, setLoginMode] = useState<'student' | 'teacher'>('student');
 
-    // 注册表单字段
     const [name, setName] = useState('');
     const [studentId, setStudentId] = useState('');
     const [email, setEmail] = useState('');
@@ -39,7 +37,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
 
         try {
             if (isLoginView) {
-                // 登录：学生用学号@school.id，教师用真实邮箱
                 const authEmail = loginMode === 'student'
                     ? `${studentId}@school.id`
                     : email;
@@ -54,12 +51,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     onClose();
                 }
             } else {
-                // 注册：学生用学号@school.id，教师用真实邮箱
                 const authEmail = userRole === 'student'
                     ? `${studentId}@school.id`
                     : email;
 
-                // 前置验证
                 if (userRole === 'student' && !studentId.trim()) {
                     throw new Error('学生注册必须填写学号');
                 }
@@ -111,26 +106,36 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
         }
     };
 
+    const inputClass = "w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/60 outline-none transition-all";
+    const labelClass = "text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 block";
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
 
-            <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
                 {/* Header */}
-                <div className="bg-primary/5 p-6 text-center border-b border-slate-100 dark:border-slate-700">
-                    <h2 className="text-2xl font-bold text-primary mb-1">
-                        {isLoginView ? '欢迎回来 👋' : '创建账户 🚀'}
-                    </h2>
-                    <p className="text-sm text-slate-500">
-                        {isLoginView ? '登录智学英语 Hub' : '加入智学英语 Hub'}
-                    </p>
+                <div className="px-6 pt-6 pb-5 border-b border-slate-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                                {isLoginView ? '登录账户' : '创建账户'}
+                            </h2>
+                            <p className="text-sm text-slate-500 mt-0.5">
+                                {isLoginView ? '欢迎回来，请输入你的账号信息' : '加入智学英语 Hub'}
+                            </p>
+                        </div>
+                        <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                            <span className="material-icons-round text-slate-400 text-xl">close</span>
+                        </button>
+                    </div>
                 </div>
 
-                <form onSubmit={handleAuth} className="p-8 space-y-4 max-h-[75vh] overflow-y-auto">
+                <form onSubmit={handleAuth} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
 
-                    {/* ── 登录模式切换（仅登录界面显示） ── */}
+                    {/* 登录模式切换 */}
                     {isLoginView && (
-                        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
+                        <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg">
                             {[
                                 { mode: 'student' as const, label: '学生登录', icon: 'school' },
                                 { mode: 'teacher' as const, label: '教师登录', icon: 'person' },
@@ -139,42 +144,42 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                                     key={mode}
                                     type="button"
                                     onClick={() => { setLoginMode(mode); setErrorMsg(''); }}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-bold transition-all ${
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-semibold transition-all ${
                                         loginMode === mode
                                             ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
                                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                                     }`}
                                 >
-                                    <span className="material-icons-round text-[16px]">{icon}</span>
+                                    <span className="material-icons-round text-[15px]">{icon}</span>
                                     {label}
                                 </button>
                             ))}
                         </div>
                     )}
 
-                    {/* ── 注册：姓名 ── */}
+                    {/* 注册：姓名 */}
                     {!isLoginView && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">姓名 (Name)</label>
+                        <div>
+                            <label className={labelClass}>姓名</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">person</span>
+                                <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">person</span>
                                 <input
                                     type="text"
                                     required
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="请输入真实姓名"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── 注册：身份选择（放在学号前，决定学号是否必填） ── */}
+                    {/* 注册：身份选择 */}
                     {!isLoginView && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">身份 (Role)</label>
-                            <div className="flex gap-3">
+                        <div>
+                            <label className={labelClass}>身份</label>
+                            <div className="flex gap-2">
                                 {[
                                     { value: 'student' as const, label: '学生' },
                                     { value: 'teacher' as const, label: '教师' },
@@ -183,9 +188,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                                         key={opt.value}
                                         type="button"
                                         onClick={() => setUserRole(opt.value)}
-                                        className={`flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all ${
+                                        className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-all ${
                                             userRole === opt.value
-                                                ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                                                ? 'bg-primary text-white border-primary'
                                                 : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-primary/50'
                                         }`}
                                     >
@@ -196,103 +201,100 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                         </div>
                     )}
 
-                    {/* ── 学号：登录（学生模式）或注册 ── */}
-                    {/* 登录-学生模式 或 注册任意身份时都显示；教师登录模式隐藏 */}
+                    {/* 学号 */}
                     {(isLoginView ? loginMode === 'student' : true) && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                学号 / 工号 (ID)
-                                {/* 注册时教师显示"选填" */}
+                        <div>
+                            <label className={labelClass}>
+                                学号 / 工号
                                 {!isLoginView && userRole === 'teacher' && (
-                                    <span className="ml-1 text-slate-400 normal-case font-normal">选填</span>
+                                    <span className="ml-1 text-slate-400 font-normal">（选填）</span>
                                 )}
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">badge</span>
+                                <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">badge</span>
                                 <input
                                     type="text"
                                     required={isLoginView ? true : userRole === 'student'}
                                     value={studentId}
                                     onChange={(e) => setStudentId(e.target.value)}
                                     placeholder="请输入学号或工号"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── 注册：学校名称（必填） ── */}
+                    {/* 注册：学校名称 */}
                     {!isLoginView && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">学校名称 (School)</label>
+                        <div>
+                            <label className={labelClass}>学校名称</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">account_balance</span>
+                                <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">account_balance</span>
                                 <input
                                     type="text"
                                     required
                                     value={schoolName}
                                     onChange={(e) => setSchoolName(e.target.value)}
                                     placeholder="请输入所在学校全称"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── 注册：学院/部门（必填） ── */}
+                    {/* 注册：学院/部门 */}
                     {!isLoginView && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">学院/部门 (College)</label>
+                        <div>
+                            <label className={labelClass}>学院 / 部门</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">domain</span>
+                                <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">domain</span>
                                 <input
                                     type="text"
                                     required
                                     value={collegeName}
                                     onChange={(e) => setCollegeName(e.target.value)}
                                     placeholder="请输入所在学院或部门"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── 邮箱：注册时显示 / 教师登录时显示 ── */}
+                    {/* 邮箱 */}
                     {(isLoginView ? loginMode === 'teacher' : true) && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                邮箱 (Email)
-                                {/* 注册时学生显示"选填"；教师必填 */}
+                        <div>
+                            <label className={labelClass}>
+                                邮箱
                                 {!isLoginView && userRole === 'student' && (
-                                    <span className="ml-1 text-slate-400 normal-case font-normal">选填</span>
+                                    <span className="ml-1 text-slate-400 font-normal">（选填）</span>
                                 )}
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">mail</span>
+                                <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">mail</span>
                                 <input
                                     type="email"
                                     required={isLoginView ? true : userRole === 'teacher'}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="yourname@example.com"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                    className={inputClass}
                                 />
                             </div>
                         </div>
                     )}
 
-                    {/* ── 密码 ── */}
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">密码 (Password)</label>
+                    {/* 密码 */}
+                    <div>
+                        <label className={labelClass}>密码</label>
                         <div className="relative">
-                            <span className="absolute left-3 top-3 text-slate-400 material-icons-round text-lg">lock</span>
+                            <span className="absolute left-3 top-2.5 text-slate-400 material-icons-round text-lg">lock</span>
                             <input
                                 type="password"
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 outline-none transition-all"
+                                className={inputClass}
                             />
                         </div>
                     </div>
@@ -300,7 +302,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     {errorMsg && (
                         <div className={`p-3 rounded-lg flex items-center gap-2 text-sm ${
                             errorMsg.startsWith('注册成功')
-                                ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
                                 : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
                         }`}>
                             <span className="material-icons-round text-base">
@@ -313,22 +315,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-primary/30 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                        className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                     >
                         {isLoading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>}
-                        {isLoginView ? '立即登录' : '注册账号'}
+                        {isLoginView ? '登录' : '注册'}
                     </button>
 
-                    <div className="text-center text-sm text-slate-500">
+                    <p className="text-center text-sm text-slate-500">
                         {isLoginView ? '还没有账号？' : '已有账号？'}
                         <button
                             type="button"
                             onClick={() => { setIsLoginView(!isLoginView); resetForm(); }}
-                            className="ml-1 text-primary font-bold hover:underline"
+                            className="ml-1 text-primary font-semibold hover:underline"
                         >
                             {isLoginView ? '去注册' : '去登录'}
                         </button>
-                    </div>
+                    </p>
                 </form>
             </div>
         </div>

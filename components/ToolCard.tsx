@@ -8,54 +8,43 @@ interface ToolCardProps {
 
 const ToolCard: React.FC<ToolCardProps> = ({ tool, onStart }) => {
     return (
-        <div className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative overflow-hidden">
-            {/* Header: Icon and Category */}
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-4 rounded-2xl ${tool.iconBg} transition-transform group-hover:scale-105`}>
-                    <span className={`material-icons-round text-3xl ${tool.iconColor}`}>{tool.icon}</span>
-                </div>
-                <span className={`px-4 py-1.5 rounded-full text-sm font-bold tracking-wide ${tool.categoryColor}`}>
+        <div className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-150">
+
+            {/* 分类标签 */}
+            <div className="flex justify-end mb-4">
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${tool.categoryColor}`}>
                     {tool.category}
                 </span>
             </div>
 
-            {/* Title */}
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 group-hover:text-primary transition-colors tracking-tight">
+            {/* 标题 */}
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm mb-1.5 group-hover:text-primary transition-colors">
                 {tool.title}
             </h3>
 
-            {/* Description */}
-            <p className="text-base text-slate-500 dark:text-slate-400 mb-6 flex-grow leading-relaxed">
+            {/* 描述 */}
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2 flex-grow mb-4">
                 {tool.description}
             </p>
 
-            {/* Footer Area */}
-            <div className="mt-auto space-y-5">
-                {/* Feature Tags */}
-                {tool.tags && tool.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {tool.tags.map(tag => (
-                            <div key={tag} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                                <span className="material-icons-round text-[14px] opacity-70">extension</span>
-                                {tag}
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Buttons */}
-                <div className="pt-2">
-                    <button
-                        onClick={() => onStart(tool)}
-                        className="w-full bg-primary hover:bg-blue-700 text-white py-3 rounded-xl text-base font-bold transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-                    >
-                        <span className="material-icons-round">
-                            {tool.externalLink ? 'open_in_new' : 'play_arrow'}
+            {/* 标签 */}
+            {tool.tags && tool.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                    {tool.tags.map(tag => (
+                        <span key={tag} className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                            {tag}
                         </span>
-                        {tool.externalLink ? '跳转' : '开始'}
-                    </button>
+                    ))}
                 </div>
-            </div>
+            )}
+
+            {/* Apple 风格胶囊按钮 */}
+            <button
+                onClick={() => onStart(tool)}
+                className="mt-auto self-start bg-[#0071e3] hover:bg-[#0077ed] active:bg-[#006edb] text-white px-5 py-2 rounded-full text-xs font-medium transition-colors"
+            >
+                开始使用 ›
+            </button>
         </div>
     );
 };
