@@ -8,7 +8,7 @@ interface ToolCardProps {
 
 const ToolCard: React.FC<ToolCardProps> = ({ tool, onStart }) => {
     return (
-        <div className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-150">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 flex flex-col">
 
             {/* 分类标签 */}
             <div className="flex justify-end mb-4">
@@ -18,7 +18,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, onStart }) => {
             </div>
 
             {/* 标题 */}
-            <h3 className="font-semibold text-slate-900 dark:text-white text-sm mb-1.5 group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-slate-900 dark:text-white text-sm mb-1.5">
                 {tool.title}
             </h3>
 
@@ -41,7 +41,7 @@ const ToolCard: React.FC<ToolCardProps> = ({ tool, onStart }) => {
             {/* Apple 风格胶囊按钮 */}
             <button
                 onClick={() => onStart(tool)}
-                className="mt-auto self-start bg-[#0071e3] hover:bg-[#0077ed] active:bg-[#006edb] text-white px-5 py-2 rounded-full text-xs font-medium transition-colors"
+                className="mt-auto self-start bg-primary hover:bg-primary-dark active:bg-primary-dark text-white px-5 py-2 rounded-full text-xs font-medium transition-colors"
             >
                 开始使用 ›
             </button>
