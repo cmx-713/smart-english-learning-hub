@@ -5,10 +5,11 @@ interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     onLoginSuccess: (user: any) => void;
+    initialView?: 'login' | 'register';
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-    const [isLoginView, setIsLoginView] = useState(true);
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess, initialView = 'login' }) => {
+    const [isLoginView, setIsLoginView] = useState(initialView === 'login');
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -21,6 +22,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLoginSuccess }
     const [schoolName, setSchoolName] = useState('');
     const [collegeName, setCollegeName] = useState('');
     const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+
+    React.useEffect(() => {
+        if (isOpen) {
+            setIsLoginView(initialView === 'login');
+            resetForm();
+        }
+    }, [isOpen, initialView]);
 
     if (!isOpen) return null;
 

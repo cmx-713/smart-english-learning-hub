@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface NavbarProps {
-    onOpenAuth: () => void;
+    onOpenAuth: (mode?: 'login' | 'register') => void;
     user: any | null;
     onLogout: () => void;
     onOpenContact: () => void;
@@ -67,13 +67,13 @@ const Navbar: React.FC<NavbarProps> = ({ onOpenAuth, user, onLogout, onOpenConta
                         ) : (
                             <>
                                 <button
-                                    onClick={onOpenAuth}
+                                    onClick={() => onOpenAuth('login')}
                                     className="hidden sm:block px-4 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
                                 >
                                     登录
                                 </button>
                                 <button
-                                    onClick={onOpenAuth}
+                                    onClick={() => onOpenAuth('register')}
                                     className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-primary-dark rounded-lg transition-colors"
                                 >
                                     注册

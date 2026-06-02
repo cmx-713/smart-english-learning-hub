@@ -47,6 +47,7 @@ const App: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [authInitialView, setAuthInitialView] = useState<'login' | 'register'>('login');
     const [isContactOpen, setIsContactOpen] = useState(false);
     const [isAdminOpen, setIsAdminOpen] = useState(false);
     const [activeTool, setActiveTool] = useState<Tool | null>(null);
@@ -143,6 +144,7 @@ const App: React.FC = () => {
 
     const handleStartTool = async (tool: Tool) => {
         if (!user) {
+            setAuthInitialView('login');
             setIsAuthOpen(true);
             return;
         }
@@ -228,6 +230,7 @@ const App: React.FC = () => {
 
     const handleOpenGeneralChat = () => {
         if (!user) {
+            setAuthInitialView('login');
             setIsAuthOpen(true);
             return;
         }
@@ -243,7 +246,7 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark font-sans">
             <Navbar
-                onOpenAuth={() => setIsAuthOpen(true)}
+                onOpenAuth={(mode = 'login') => { setAuthInitialView(mode); setIsAuthOpen(true); }}
                 user={user}
                 onLogout={handleLogout}
                 onOpenContact={() => setIsContactOpen(true)}
@@ -373,6 +376,7 @@ const App: React.FC = () => {
                     setUser(u);
                     setIsAuthOpen(false);
                 }}
+                initialView={authInitialView}
             />
 
             <ContactModal
