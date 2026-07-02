@@ -107,7 +107,7 @@ const App: React.FC = () => {
     // Token 缓存: 存储每个用户的 access_token，避免每次都请求
     const cozeTokenCacheRef = useRef<{ token: string; expiresAt: number } | null>(null);
 
-    // 从后端获取基于 JWT 的用户专属 Token
+    // 从后端获取基于 JWT 的用户专属 Token（带重试，抗瞬时抖动）
     const fetchCozeToken = async (userId: string): Promise<string> => {
         // 如果缓存的 token 还没过期，直接使用
         const cached = cozeTokenCacheRef.current;
@@ -115,31 +115,55 @@ const App: React.FC = () => {
             return cached.token;
         }
 
-        try {
-            const response = await fetch('/api/coze-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: userId }),
-            });
+        const MAX_ATTEMPTS = 3;
+        let lastError: unknown = null;
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('[App] Failed to fetch Coze token:', errorData);
-                throw new Error(errorData.error || 'Failed to fetch token');
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            try {
+                const response = await fetch('/api/coze-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.access_token) {
+                    throw new Error('响应中缺少 access_token');
+                }
+
+                // 计算缓存过期时间：兼容扣子返回「绝对 Unix 时间戳」或「剩余秒数」两种格式
+                const nowMs = Date.now();
+                const rawExp = Number(data.expires_in) || 0;
+                let expiresAtMs: number;
+                if (rawExp > 1_000_000_000) {
+                    expiresAtMs = rawExp * 1000;          // 绝对 Unix 时间戳（秒）
+                } else if (rawExp > 0) {
+                    expiresAtMs = nowMs + rawExp * 1000;  // 剩余秒数
+                } else {
+                    expiresAtMs = nowMs + 3600 * 1000;    // 兜底：缓存 1 小时
+                }
+                expiresAtMs -= 5 * 60 * 1000;             // 提前 5 分钟过期，避免边界情况
+
+                cozeTokenCacheRef.current = { token: data.access_token, expiresAt: expiresAtMs };
+                return data.access_token;
+            } catch (err) {
+                lastError = err;
+                console.error(`[App] Coze token 获取失败（第 ${attempt}/${MAX_ATTEMPTS} 次）:`, err);
+                // 非最后一次则递增退避后重试：400ms、800ms
+                if (attempt < MAX_ATTEMPTS) {
+                    await new Promise(res => setTimeout(res, attempt * 400));
+                }
             }
-
-            const data = await response.json();
-            // 缓存 token，提前 5 分钟过期（防止边界情况）
-            cozeTokenCacheRef.current = {
-                token: data.access_token,
-                expiresAt: Date.now() + (data.expires_in - 300) * 1000,
-            };
-            return data.access_token;
-        } catch (err) {
-            console.error('[App] Token fetch error, falling back to PAT:', err);
-            // 降级使用 PAT（如果后端未配置 JWT 凭证）
-            return COZE_PAT;
         }
+
+        console.error('[App] Coze token 多次重试后仍失败，降级使用 PAT:', lastError);
+        // 降级使用 PAT（本地开发或后端未配置 JWT 时）。生产环境该值通常为空。
+        return COZE_PAT;
     };
 
     const handleStartTool = async (tool: Tool) => {
@@ -169,6 +193,12 @@ const App: React.FC = () => {
             // 获取该用户的专属 Token（JWT 签名 + session_name 隔离）
             const userId = user.id || user.user_metadata?.student_id || 'anonymous';
             const cozeToken = await fetchCozeToken(userId);
+
+            // token 为空说明后端服务暂时不可用，给出明确中文提示而非放任 SDK 报英文错误
+            if (!cozeToken) {
+                window.alert('连接智能体服务暂时失败，请稍后重试。若多次失败请联系管理员。');
+                return;
+            }
 
             const client = new window.CozeWebSDK.WebChatClient({
                 config: {
